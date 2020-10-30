@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<ul class="products">
+    <li data-id="001"
+        data-name="iphone"
+        data-price="600">iPhone</li>
+    <li data-id="002"
+        data-name="samsung"
+        data-price="650">Samsung</li>
+    <li data-id="003"
+        data-name="pixel"
+        data-price="500">Pixel</li>
+</ul>
+<ul id="box"></ul>
+<script>
+    var oList = document.getElementsByTagName('li');
+    var sum = 0;
+    for(var i = 0; i < oList.length; i++){
+        var obj = oList[i].dataset;
+        sum += +obj.price;
+    }
+    // console.log(sum);
+
+
+    var arr = ['apple', 'pear', 'berry','ba'];
+    // find the hook
+    var oUI = document.getElementById('box');
+    for (var i = 0; i < arr.length; i++) {
+        // var newItem = document.createElement('li');
+        // newItem.className = 'item';
+        // newItem.id = arr[i];
+        // newItem.innerHTML = arr[i];
+        var newItem = $create('li', {
+            className: 'item',
+            id: arr[i],
+            innerHTML: arr[i]
+        });
+        oUI.append(newItem);
+    }
+
+    function $create(tag, options) {
+        var ele = document.createElement(tag);
+        for (var key in options) {
+            // options might has other property from
+            // parent class.
+            if (options.hasOwnProperty(key)) {
+                ele[key] = options[key];
+            }
+        }
+        return ele;
+    }
+
+</script>
+
+</body>
+</html>

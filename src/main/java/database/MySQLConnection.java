@@ -1,0 +1,272 @@
+package database;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.Set;
+
+import entity.Item;
+import entity.Item.ItemBuilder;
+
+
+public class MySQLConnection {
+    private Connection conn;
+
+    public MySQLConnection() {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver").newInstance();
+//            conn = DriverManager.getConnection(MySQLDBUtil.URL);
+            conn = DriverManager.getConnection (MySQLDBUtil.URLpart, "admin", "****");
+            if (conn != null) {
+                System.out.println("DB connected successful!");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void close() {
+        if (conn != null) {
+            try {
+                conn.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    // database only save favorite items in the Table items
+    public void setFavoriteItems(String userId, Item item) {
+        if (conn == null) {
+            System.err.println("DB connection failed");
+            return;
+        }
+        saveItem(item);
+        String sql = "INSERT INTO history (user_id, item_id) VALUES (?, ?)";
+        try {
+            PreparedStatement statement = conn.prepareStatement(sql);
+            statement.setString(1, userId);
+            statement.setString(2, item.getItemId());
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void unsetFavoriteItems(String userId, String itemId) {
+        if (conn == null) {
+            System.err.println("DB connection failed");
+            return;
+        }
+        String sql = "DELETE FROM history WHERE user_id = ? AND item_id = ?";
+        // solve the database injection attack;
+        try {
+            PreparedStatement statement = conn.prepareStatement(sql);
+            statement.setString(1, userId); // all characters in here is only string not logical operator
+            statement.setString(2, itemId);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        // you don't have to delete the item from database immediately. also for user experience.
+        // Actually you could write an offline function to delete.
+    }
+
+    public void saveItem(Item item) {
+        if (conn == null) {
+            System.err.println("DB connection failed");
+            return;
+        }
+
+        // IGNORE represents the database will not insert duplicate words
+        String sql = "INSERT IGNORE INTO items VALUES (?, ?, ?, ?, ?)";
+        try {
+            PreparedStatement statement = conn.prepareStatement(sql);
+            statement.setString(1, item.getItemId());
+            statement.setString(2, item.getName());
+            statement.setString(3, item.getAddress());
+            statement.setString(4, item.getImageUrl());
+            statement.setString(5, item.getUrl());
+            statement.executeUpdate();
+
+            sql = "INSERT IGNORE INTO keywords VALUES (?, ?)";
+            statement = conn.prepareStatement(sql);
+            statement.setString(1, item.getItemId());
+            for (String keyword : item.getKeywords()) {
+                statement.setString(2, keyword);
+                statement.executeUpdate();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Get information from database
+     * @param userId
+     * @return the information of favorite item ids
+     */
+    public Set<String> getFavoriteItemIds(String userId) {
+        if (conn == null) {
+            System.err.println("DB connection failed");
+            return new HashSet<>();
+        }
+
+        Set<String> favoriteItems = new HashSet<>();
+
+        try {
+            String sql = "SELECT item_id FROM history WHERE user_id = ?";
+            PreparedStatement statement = conn.prepareStatement(sql);
+            statement.setString(1, userId);
+            // ResultSet is like a table, it has many rows, each row is corresponding to a item
+            // it has a iterator, it always has a .next(). Initially, it was point to -1 index.
+            ResultSet rs = statement.executeQuery();
+            while (rs.next()) {
+                String itemId = rs.getString("item_id");
+                favoriteItems.add(itemId);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return favoriteItems;
+    }
+
+    /**
+     * Get facvorite items according to the userId
+     * @param userId
+     * @return Set of items
+     */
+    public Set<Item> getFavoriteItems(String userId) {
+        if (conn == null) {
+            System.err.println("DB connection failed");
+            return new HashSet<>();
+        }
+        Set<Item> favoriteItems = new HashSet<>();
+        // get the Ids of favorite items based on the userId
+        Set<String> favoriteItemIds = getFavoriteItemIds(userId);
+        String sql = "SELECT * FROM items WHERE item_id = ?";
+        try {
+            PreparedStatement statement = conn.prepareStatement(sql);
+            for (String itemId : favoriteItemIds) {
+                statement.setString(1, itemId);
+                ResultSet rs = statement.executeQuery();
+
+                ItemBuilder builder = new ItemBuilder();
+                while (rs.next()) {
+                    builder.setItemId(rs.getString("item_id"));
+                    builder.setName(rs.getString("name"));
+                    builder.setAddress(rs.getString("address"));
+                    builder.setImageUrl(rs.getString("image_url"));
+                    builder.setUrl(rs.getString("url"));
+                    builder.setKeywords(getKeywords(itemId));
+                    favoriteItems.add(builder.build());
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return favoriteItems;
+    }
+
+    public Set<String> getKeywords(String itemId) {
+        if (conn == null) {
+            System.err.println("DB connection failed");
+            return null;
+        }
+        Set<String> keywords = new HashSet<>();
+        String sql = "SELECT keyword from keywords WHERE item_id = ? ";
+        try {
+            PreparedStatement statement = conn.prepareStatement(sql);
+            statement.setString(1, itemId);
+            ResultSet rs = statement.executeQuery();
+            while (rs.next()) {
+                String keyword = rs.getString("keyword");
+                keywords.add(keyword);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return keywords;
+    }
+
+
+
+    public String getFullname(String userId) {
+        if (conn == null) {
+            System.err.println("DB connection failed");
+            return "";
+        }
+
+        String name = "";
+        String sql = "SELECT first_name, last_name FROM users WHERE user_id = ?";
+        try {
+            PreparedStatement statement = conn.prepareStatement(sql);
+            statement.setString(1, userId);
+            ResultSet rs = statement.executeQuery();
+            if (rs.next()) {
+                name = rs.getString("first_name") + " "+ rs.getString("last_name");
+            }
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+        return name;
+    }
+
+    public boolean verifyLogin(String userId, String password) {
+        if (conn == null) {
+            System.err.println("DB connection failed");
+            return false;
+        }
+
+        String sql = "SELECT user_id FROM users WHERE user_id = ? AND password = ?";
+        try {
+            PreparedStatement statement = conn.prepareStatement(sql);
+            statement.setString(1, userId);
+            statement.setString(2, password);
+            ResultSet rs = statement.executeQuery();
+//            if (rs.next()) {
+//                return true;
+//            }
+            return rs.next();
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean addUser(String userId, String password, String firstname, String lastname) {
+        if (conn == null) {
+            System.err.println("DB connection failed");
+            return false;
+        }
+        String sql = "INSERT IGNORE INTO users VALUES (?, ?, ?, ?)";
+        try {
+            PreparedStatement statement = conn.prepareStatement(sql);
+            statement.setString(1, userId);
+            statement.setString(2, password);
+            statement.setString(3, firstname);
+            statement.setString(4, lastname);
+            //  * return (1) the row count for SQL Data Manipulation Language (DML) statements
+            //  or (2) 0 for SQL statements that return nothing
+            return statement.executeUpdate() == 1;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+}
+
+
+
+
+
+
+
+

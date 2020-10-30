@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h1> Hello DOM BOM!</h1>
+
+<ol id="ol">
+    <li>0</li>
+    <li>1</li>
+    <li>2</li>
+</ol>
+
+
+<div class="user common">Users:</div>
+
+<ul class="box common">
+    <li id="john" class="person">John</li>
+    <li id="peter">Peter</li>
+</ul>
+
+
+<script type = "text/javascript">
+    var str = 'hello';
+    console.log(str)
+
+    var john = document.getElementById('john');
+    // console.dir(john); // take the structure
+    // console.log(john); // get the object
+    var peter = document.getElementById('peter');
+    var comBox = document.getElementsByClassName('common');
+    // console.log(comBox);
+    var box = document.getElementsByClassName('common')[0];
+    var jo = box.getElementsByClassName('person')[0];
+    // console.log(jo);
+
+    var ol = document.getElementById('ol');
+
+    var lis = document.createElement('li');
+    lis.innerHTML = '<strong> append </strong>';
+    ol.append(lis);
+    var liw = document.createElement('li');
+    liw.innerText = 'prepend';
+    ol.prepend(liw);
+
+
+    console.log(lis);
+
+</script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AJAX</title>
+</head>
+<body>
+<h1>Hello Ajax</h1>
+<h2>haha</h2>
+<button>click me</button>
+<script>
+    var url = "http://petstore.swagger.io/v2/swagger.json";
+
+    // front end <-> back end
+    function ajax(method, url, data, successCallback, errorCallback) {
+        // step 1: create ajax object
+        var xhr = new XMLHttpRequest();
+        // step 2: config like url, method, async/sync
+        xhr.open('GET', url, true);
+        // step 3: send
+        if (data === null) {
+            xhr.send()
+        } else {
+            xhr.setRequestHeader("content-type",
+                "application/json;charset=utf-8");
+            xhr.send(data)
+        }
+        // step 4: listen
+        xhr.onload = function() {
+            // response
+            if (xhr.status === 200) {
+                // get data
+                successCallback(xhr.responseText)
+            }
+        }
+        xhr.onerror = function() {
+            console.log("something is wrong")
+            errorCallback()
+        }
+    }
+
+    ajax('GET', url, null, function(data){
+        var obj = JSON.parse(data)
+        console.log(obj)
+    }, function(){
+        console.log('error')
+    })
+
+
+
+
+</script>
+
+
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Event</title>
+    <style>
+        div{
+            background-color:lightblue;
+            width: 200px;
+            height: 200px;
+        }
+    </style>
+
+</head>
+<body>
+
+<h1>Event</h1>
+
+
+<div onclick="alert('haha')"></div>
+
+<script>
+    var oDiv = document.getElementsByTagName('div')[0];
+    // oDiv.onclick = function(){
+    //     oDiv.style.backgroundColor = 'red';
+    //     console.log('red click happened!');
+    // }
+    // oDiv.onclick = function(){
+    //     oDiv.style.backgroundColor = 'green';
+    //     console.log('green click happened!');
+    // }
+    // oDiv.onmouseover = function() {
+    //     console.log('mouse is over the object');
+    //     oDiv.style.backgroundColor = 'purple';
+    // }
+    // oDiv.onmouseleave = function() {
+    //     console.log('mouse is leaving the object');
+    //     oDiv.style.backgroundColor = 'lightblue';
+    // }
+
+
+    // industry commonly use this.
+    // oDiv.addEventListener('click', function() {
+    //     console.log(3)
+    // }, false)
+
+
+</script>
+
+
+</body>
+</html>
